@@ -12,19 +12,19 @@ impl Env {
     }
 
     pub fn get_binding_value(&self, name: &str) -> Result<Val, String> {
-        self.bindings.get(name)
+        self.bindings
+            .get(name)
             .cloned()
             .ok_or_else(|| format!("binding with name {} does not exist", name))
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::binding_usage::BindingUsage;
+    use crate::expr::binding_usage::BindingUsage;
 
     use super::*;
-    
+
     #[test]
     fn eval_existing_binding_usage() {
         let mut env = Env::default();

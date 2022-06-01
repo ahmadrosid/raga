@@ -2,17 +2,12 @@ pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
     take_while_err(|c| c.is_ascii_digit(), s, "expected digits".to_string())
 }
 
-pub(crate) fn extract_op(s: &str) -> (&str, &str) {
-    match &s[0..1] {
-        "+" | "-" | "*" | "/" => {}
-        _ => panic!("bad operator"),
-    }
-
-    (&s[1..], &s[0..1])
-}
-
 pub(crate) fn extract_whitespace(s: &str) -> Result<(&str, &str), String> {
     take_while_err(|c| c == ' ', s, "expected a space".to_string())
+}
+
+pub(crate) fn skip_whitespace(s: &str) -> (&str, &str) {
+    take_while(|c| c.is_whitespace(), s)
 }
 
 pub(crate) fn take_while_err(
@@ -86,26 +81,6 @@ mod test {
     #[test]
     fn extract_digit_with_no_reminder() {
         assert_eq!(extract_digits("100"), Ok(("", "100")))
-    }
-
-    #[test]
-    fn extract_op_plus() {
-        assert_eq!(extract_op("+100"), ("100", "+"))
-    }
-
-    #[test]
-    fn extract_op_minus() {
-        assert_eq!(extract_op("-100"), ("100", "-"))
-    }
-
-    #[test]
-    fn extract_op_star() {
-        assert_eq!(extract_op("*100"), ("100", "*"))
-    }
-
-    #[test]
-    fn extract_op_slash() {
-        assert_eq!(extract_op("/100"), ("100", "/"))
     }
 
     #[test]

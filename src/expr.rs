@@ -1,3 +1,6 @@
+pub mod binding_usage;
+pub mod blocks;
+
 use crate::{utils, val::Val};
 
 #[derive(Debug, PartialEq)]
@@ -189,5 +192,10 @@ mod tests {
             .eval(),
             Val::Number(5)
         )
+    }
+
+    #[test]
+    fn parse_binding_usage() {
+        
     }
 }

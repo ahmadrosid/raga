@@ -1,8 +1,8 @@
-use crate::{utils, env::Env, val::Val};
+use crate::{env::Env, utils, val::Val};
 
 #[derive(Debug, PartialEq)]
 pub struct BindingUsage {
-    pub name: String
+    pub name: String,
 }
 
 impl BindingUsage {
@@ -11,8 +11,8 @@ impl BindingUsage {
         Ok((
             s,
             Self {
-                name: name.to_string()
-            }
+                name: name.to_string(),
+            },
         ))
     }
 
