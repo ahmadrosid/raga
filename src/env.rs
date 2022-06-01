@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::val::Val;
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Default)]
 pub struct Env {

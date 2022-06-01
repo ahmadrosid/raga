@@ -11,12 +11,12 @@ pub(crate) fn extract_op(s: &str) -> (&str, &str) {
     (&s[1..], &s[0..1])
 }
 
-pub(crate) fn extract_whitespace(s: &str) -> (&str, &str) {
-    take_while(|c| c == ' ', s)
+pub(crate) fn extract_whitespace(s: &str) -> Result<(&str, &str), String> {
+    take_while_err(|c| c == ' ', s, "expected a space".to_string())
 }
 
 pub(crate) fn take_while_err(
-    accept: impl Fn(char) -> bool, 
+    accept: impl Fn(char) -> bool,
     s: &str,
     err_msg: String,
 ) -> Result<(&str, &str), String> {
@@ -38,20 +38,20 @@ pub(crate) fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str)
     (reminder, extracted)
 }
 
-pub(crate) fn extract_ident(s: &str) -> (&str, &str) {
+pub(crate) fn extract_ident(s: &str) -> Result<(&str, &str), String> {
     let input_start_with_alphabetic = s
         .chars()
         .next()
         .map(|c| c.is_ascii_alphabetic())
         .unwrap_or(false);
     if input_start_with_alphabetic {
-        take_while(|c| c.is_alphanumeric(), s)
+        Ok(take_while(|c| c.is_alphanumeric(), s))
     } else {
-        (s, "")
+        Err("expected identifier".to_string())
     }
 }
 
-pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result< &'b str, String> {
+pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str, String> {
     if s.starts_with(starting_text) {
         Ok(&s[starting_text.len()..])
     } else {
@@ -110,22 +110,30 @@ mod test {
 
     #[test]
     fn extract_spaces() {
-        assert_eq!(extract_whitespace("    1"), ("1", "    "))
+        assert_eq!(extract_whitespace("    1"), Ok(("1", "    ")))
+    }
+
+    #[test]
+    fn do_not_extract_spaces_when_input_does_not_have_space() {
+        assert_eq!(extract_whitespace("1"), Err("expected a space".to_string()))
     }
 
     #[test]
     fn extract_alphabetic_ident() {
-        assert_eq!(extract_ident("absc break"), (" break", "absc"))
+        assert_eq!(extract_ident("absc break"), Ok((" break", "absc")))
     }
 
     #[test]
     fn extract_alphanumeric_ident() {
-        assert_eq!(extract_ident("absc1 break"), (" break", "absc1"))
+        assert_eq!(extract_ident("absc1 break"), Ok((" break", "absc1")))
     }
 
     #[test]
     fn extract_ident_start_with_number() {
-        assert_eq!(extract_ident("123f"), ("123f", ""))
+        assert_eq!(
+            extract_ident("123f"),
+            Err("expected identifier".to_string())
+        )
     }
 
     #[test]

@@ -31,11 +31,7 @@ impl Op {
 #[derive(Debug, PartialEq)]
 pub enum Expr {
     Number(Number),
-    Operation { 
-        lhs: Number,
-        rhs: Number,
-        op: Op,
-    }
+    Operation { lhs: Number, rhs: Number, op: Op },
 }
 
 impl Expr {
@@ -49,10 +45,10 @@ impl Expr {
 
     pub fn new_operation(s: &str) -> Result<(&str, Self), String> {
         let (s, lhs) = Number::new(s)?;
-        let (s, _) = utils::extract_whitespace(s);
+        let (s, _) = utils::extract_whitespace(s)?;
 
         let (s, op) = Op::new(s)?;
-        let (s, _) = utils::extract_whitespace(s);
+        let (s, _) = utils::extract_whitespace(s)?;
 
         let (s, rhs) = Number::new(s)?;
 
@@ -61,20 +57,20 @@ impl Expr {
 
     pub fn eval(&self) -> Val {
         match self {
-            Self::Operation{ lhs, rhs, op} => {
-            let Number(lhs) = lhs;
-            let Number(rhs) = rhs;
+            Self::Operation { lhs, rhs, op } => {
+                let Number(lhs) = lhs;
+                let Number(rhs) = rhs;
 
-            let result = match op {
-                Op::Add => lhs + rhs,
-                Op::Sub => lhs - rhs,
-                Op::Mul => lhs * rhs,
-                Op::Div => lhs / rhs,
-            };
+                let result = match op {
+                    Op::Add => lhs + rhs,
+                    Op::Sub => lhs - rhs,
+                    Op::Mul => lhs * rhs,
+                    Op::Div => lhs / rhs,
+                };
 
-            Val::Number(result)
+                Val::Number(result)
             }
-            Self::Number(Number(n)) => Val::Number(*n)
+            Self::Number(Number(n)) => Val::Number(*n),
         }
     }
 }
@@ -150,7 +146,8 @@ mod tests {
                 lhs: Number(1),
                 rhs: Number(2),
                 op: Op::Add
-            }.eval(),
+            }
+            .eval(),
             Val::Number(3)
         )
     }
@@ -162,7 +159,8 @@ mod tests {
                 lhs: Number(1),
                 rhs: Number(2),
                 op: Op::Sub
-            }.eval(),
+            }
+            .eval(),
             Val::Number(-1)
         )
     }
@@ -174,7 +172,8 @@ mod tests {
                 lhs: Number(10),
                 rhs: Number(2),
                 op: Op::Mul
-            }.eval(),
+            }
+            .eval(),
             Val::Number(20)
         )
     }
@@ -186,7 +185,8 @@ mod tests {
                 lhs: Number(10),
                 rhs: Number(2),
                 op: Op::Div
-            }.eval(),
+            }
+            .eval(),
             Val::Number(5)
         )
     }
