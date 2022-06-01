@@ -24,6 +24,18 @@ pub (crate) fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str
     (reminder, extracted)
 }
 
+pub(crate) fn extract_ident(s: &str) -> (&str, &str) {
+    let input_start_with_alphabetic = s.chars()
+        .next()
+        .map(|c| c.is_ascii_alphabetic())
+        .unwrap_or(false);
+    if input_start_with_alphabetic {
+        take_while(|c| c.is_alphanumeric(), s)
+    } else {
+        (s, "")
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -73,5 +85,19 @@ mod test {
         assert_eq!(extract_whitespace("    1"), ("1", "    "))
     }
 
+    #[test]
+    fn extract_alphabetic_ident() {
+        assert_eq!(extract_ident("absc break"), (" break", "absc"))
+    }
+
+    #[test]
+    fn extract_alphanumeric_ident() {
+        assert_eq!(extract_ident("absc1 break"), (" break", "absc1"))
+    }
+
+    #[test]
+    fn extract_ident_start_with_number() {
+        assert_eq!(extract_ident("123f"), ("123f", ""))
+    }
     
 }
