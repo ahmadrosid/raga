@@ -1,5 +1,5 @@
-pub(crate) fn extract_digits(s: &str) -> (&str, &str) {
-    take_while(|c| c.is_ascii_digit(), s)
+pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
+    take_while_err(|c| c.is_ascii_digit(), s, "expected digits".to_string())
 }
 
 pub(crate) fn extract_op(s: &str) -> (&str, &str) {
@@ -13,6 +13,19 @@ pub(crate) fn extract_op(s: &str) -> (&str, &str) {
 
 pub(crate) fn extract_whitespace(s: &str) -> (&str, &str) {
     take_while(|c| c == ' ', s)
+}
+
+pub(crate) fn take_while_err(
+    accept: impl Fn(char) -> bool, 
+    s: &str,
+    err_msg: String,
+) -> Result<(&str, &str), String> {
+    let (reminder, extracted) = take_while(accept, s);
+    if extracted.is_empty() {
+        Err(err_msg)
+    } else {
+        Ok((reminder, extracted))
+    }
 }
 
 pub(crate) fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
@@ -38,11 +51,11 @@ pub(crate) fn extract_ident(s: &str) -> (&str, &str) {
     }
 }
 
-pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> &'b str {
+pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result< &'b str, String> {
     if s.starts_with(starting_text) {
-        &s[starting_text.len()..]
+        Ok(&s[starting_text.len()..])
     } else {
-        panic!("expected {}", starting_text)
+        Err(format!("expected {}", starting_text))
     }
 }
 
@@ -52,22 +65,27 @@ mod test {
 
     #[test]
     fn extract_one_digit() {
-        assert_eq!(extract_digits("1+2"), ("+2", "1"))
+        assert_eq!(extract_digits("1+2"), Ok(("+2", "1")))
     }
 
     #[test]
     fn extract_multiple_digit() {
-        assert_eq!(extract_digits("10-20"), ("-20", "10"))
+        assert_eq!(extract_digits("10-20"), Ok(("-20", "10")))
     }
 
     #[test]
     fn do_not_extract_anything_from_empty_input() {
-        assert_eq!(extract_digits(""), ("", ""))
+        assert_eq!(extract_digits(""), Err("expected digits".to_string()))
+    }
+
+    #[test]
+    fn do_not_extract_when_input_is_not_digit() {
+        assert_eq!(extract_digits("abs"), Err("expected digits".to_string()))
     }
 
     #[test]
     fn extract_digit_with_no_reminder() {
-        assert_eq!(extract_digits("100"), ("", "100"))
+        assert_eq!(extract_digits("100"), Ok(("", "100")))
     }
 
     #[test]
@@ -112,6 +130,6 @@ mod test {
 
     #[test]
     fn tag_word() {
-        assert_eq!(tag("let", "let a"), (" a"))
+        assert_eq!(tag("let", "let a"), Ok(" a"))
     }
 }
