@@ -38,6 +38,14 @@ pub(crate) fn extract_ident(s: &str) -> (&str, &str) {
     }
 }
 
+pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> &'b str {
+    if s.starts_with(starting_text) {
+        &s[starting_text.len()..]
+    } else {
+        panic!("expected {}", starting_text)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -100,5 +108,10 @@ mod test {
     #[test]
     fn extract_ident_start_with_number() {
         assert_eq!(extract_ident("123f"), ("123f", ""))
+    }
+
+    #[test]
+    fn tag_word() {
+        assert_eq!(tag("let", "let a"), (" a"))
     }
 }
