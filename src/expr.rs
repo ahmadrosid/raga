@@ -15,7 +15,7 @@ pub enum Op {
     Add,
     Sub,
     Mul,
-    Div
+    Div,
 }
 
 impl Op {
@@ -27,18 +27,17 @@ impl Op {
             "-" => Self::Sub,
             "*" => Self::Mul,
             "/" => Self::Div,
-            _ => panic!("bad operator")
+            _ => panic!("bad operator"),
         };
         (s, op)
     }
 }
 
-
 #[derive(Debug, PartialEq)]
 pub struct Expr {
     pub lhs: Number,
     pub rhs: Number,
-    pub op: Op
+    pub op: Op,
 }
 
 impl Expr {
@@ -48,13 +47,12 @@ impl Expr {
 
         let (s, op) = Op::new(s);
         let (s, _) = utils::extract_whitespace(s);
-        
+
         let (s, rhs) = Number::new(s);
-        
+
         (s, Self { lhs, rhs, op })
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -114,6 +112,4 @@ mod tests {
             )
         );
     }
-
-    
 }

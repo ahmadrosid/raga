@@ -4,7 +4,7 @@ use crate::utils;
 #[derive(Debug, PartialEq)]
 pub struct BindingDef {
     name: String,
-    val: Expr
+    val: Expr,
 }
 
 impl BindingDef {
@@ -31,8 +31,8 @@ impl BindingDef {
             s,
             Self {
                 name: name.to_string(),
-                val
-            }
+                val,
+            },
         )
     }
 }
@@ -48,7 +48,7 @@ mod tests {
             BindingDef::new("let a = 10 / 2"),
             (
                 "",
-                BindingDef{
+                BindingDef {
                     name: "a".to_string(),
                     val: Expr {
                         lhs: Number(10),
