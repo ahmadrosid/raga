@@ -1,4 +1,6 @@
-use crate::{utils, stmt::Stmt};
+use crate::env::Env;
+use crate::val::Val;
+use crate::{stmt::Stmt, utils};
 
 #[derive(Debug, PartialEq)]
 pub struct Block {
@@ -22,6 +24,20 @@ impl Block {
         let (s, _) = utils::skip_whitespace(s);
         let s = utils::tag("}", s)?;
         Ok((s, Self { stmts }))
+    }
+
+    pub fn eval(&self, _: &Env) -> Result<Val, String> {
+        if self.stmts.is_empty() {
+            return Ok(Val::Unit);
+        }
+
+        let mut env = Env::default();
+        let stmts_except_last = &self.stmts[..self.stmts.len() - 1];
+        for stmt in stmts_except_last {
+            stmt.eval(&mut env)?;
+        }
+
+        self.stmts.last().unwrap().eval(&mut env)
     }
 }
 
@@ -49,8 +65,11 @@ mod tests {
             Block::new("{ 5 }"),
             Ok((
                 "",
-                Block { stmts: vec![Stmt::Expr(Expr::Number(Number(5)))] }
-            )))
+                Block {
+                    stmts: vec![Stmt::Expr(Expr::Number(Number(5)))]
+                }
+            ))
+        )
     }
 
     #[test]
@@ -66,9 +85,11 @@ mod tests {
             Ok((
                 "",
                 Block {
-                    stmts:
-                    vec![
-                        Stmt::BindingDef(BindingDef { name: "a".to_string(), val: Expr::Number(Number(10)) }),
+                    stmts: vec![
+                        Stmt::BindingDef(BindingDef {
+                            name: "a".to_string(),
+                            val: Expr::Number(Number(10))
+                        }),
                         Stmt::BindingDef(BindingDef {
                             name: "b".to_string(),
                             val: Expr::BindingUsage(BindingUsage {
@@ -80,6 +101,69 @@ mod tests {
                         })),
                     ]
                 }
-            )))
+            ))
+        )
+    }
+
+    #[test]
+    fn eval_empty_block() {
+        assert_eq!(
+            Block { stmts: Vec::new() }.eval(&Env::default()),
+            Ok(Val::Unit)
+        )
+    }
+
+    #[test]
+    fn parse_block_with_one_stmt() {
+        assert_eq!(
+            Block {
+                stmts: vec![Stmt::Expr(Expr::Number(Number(10)))]
+            }
+            .eval(&Env::default()),
+            Ok(Val::Number(10))
+        )
+    }
+
+    #[test]
+    fn parse_block_with_binding_def_and_usage() {
+        assert_eq!(
+            Block {
+                stmts: vec![
+                    Stmt::BindingDef(BindingDef {
+                        name: "two".to_string(),
+                        val: Expr::Number(Number(2))
+                    }),
+                    Stmt::Expr(Expr::BindingUsage(BindingUsage {
+                        name: "two".to_string()
+                    }))
+                ]
+            }
+            .eval(&Env::default()),
+            Ok(Val::Number(2))
+        )
+    }
+
+    #[test]
+    fn eval_block_with_multiple_binding_defs() {
+        assert_eq!(
+            Block {
+                stmts: vec![
+                    Stmt::BindingDef(BindingDef {
+                        name: "jump".to_string(),
+                        val: Expr::Number(Number(22))
+                    }),
+                    Stmt::BindingDef(BindingDef {
+                        name: "cut".to_string(),
+                        val: Expr::Number(Number(200))
+                    }),
+                    Stmt::BindingDef(BindingDef {
+                        name: "pre".to_string(),
+                        val: Expr::Number(Number(32))
+                    })
+                ]
+            }
+            .eval(&mut Env::default()),
+            Ok(Val::Unit)
+        )
     }
 }

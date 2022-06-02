@@ -27,7 +27,8 @@ pub(crate) fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str)
     let extracted_end = s
         .char_indices()
         .find_map(|(idx, c)| if accept(c) { None } else { Some(idx) })
-        .unwrap_or_else(|| s.len());
+        .unwrap_or(s.len());
+
     let extracted = &s[..extracted_end];
     let reminder = &s[extracted_end..];
     (reminder, extracted)
@@ -47,8 +48,8 @@ pub(crate) fn extract_ident(s: &str) -> Result<(&str, &str), String> {
 }
 
 pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str, String> {
-    if s.starts_with(starting_text) {
-        Ok(&s[starting_text.len()..])
+    if let Some(end) = s.strip_prefix(starting_text) {
+        Ok(end)
     } else {
         Err(format!("expected {}", starting_text))
     }

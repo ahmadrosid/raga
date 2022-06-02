@@ -29,8 +29,9 @@ impl BindingDef {
         ))
     }
 
-    pub fn eval(&self, env: &mut Env) {
-        env.store_binding(self.name.clone(), self.val.eval())
+    pub fn eval(&self, env: &mut Env) -> Result<(), String> {
+        env.store_binding(self.name.clone(), self.val.eval(env)?);
+        Ok(())
     }
 }
 
