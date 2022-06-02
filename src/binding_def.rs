@@ -14,11 +14,11 @@ impl BindingDef {
         let (s, _) = utils::extract_whitespace(s)?;
 
         let (s, name) = utils::extract_ident(s)?;
-        let (s, _) = utils::extract_whitespace(s)?;
+        let (s, _) = utils::skip_whitespace(s);
 
         let s = utils::tag("=", s)?;
 
-        let (s, _) = utils::extract_whitespace(s)?;
+        let (s, _) = utils::skip_whitespace(s);
         let (s, val) = Expr::new(s)?;
         Ok((
             s,
@@ -62,6 +62,20 @@ mod tests {
         assert_eq!(
             BindingDef::new("letaa= 10 / 2"),
             Err("expected a space".to_string())
+        )
+    }
+
+    #[test]
+    fn parse_block_with_no_space() {
+        assert_eq!(
+            BindingDef::new("let aa=20"),
+            Ok((
+                "",
+                BindingDef {
+                    name: "aa".to_string(),
+                    val: Expr::Number(Number(20))
+                }
+            ))
         )
     }
 }

@@ -2,6 +2,8 @@ pub mod binding_usage;
 pub mod blocks;
 
 use crate::{utils, val::Val};
+use binding_usage::BindingUsage;
+use blocks::Block;
 
 #[derive(Debug, PartialEq)]
 pub struct Number(pub i32);
@@ -35,11 +37,19 @@ impl Op {
 pub enum Expr {
     Number(Number),
     Operation { lhs: Number, rhs: Number, op: Op },
+    BindingUsage(BindingUsage),
+    Block(Block),
 }
 
 impl Expr {
     pub fn new(s: &str) -> Result<(&str, Self), String> {
-        Self::new_operation(s).or_else(|_| Self::new_number(s))
+        Self::new_operation(s)
+            .or_else(|_| Self::new_number(s))
+            .or_else(|_| {
+                BindingUsage::new(s)
+                    .map(|(s, binding_usage)| (s, Self::BindingUsage(binding_usage)))
+            })
+            .or_else(|_| Block::new(s).map(|(s, block)| (s, Self::Block(block))))
     }
 
     pub fn new_number(s: &str) -> Result<(&str, Self), String> {
@@ -48,10 +58,10 @@ impl Expr {
 
     pub fn new_operation(s: &str) -> Result<(&str, Self), String> {
         let (s, lhs) = Number::new(s)?;
-        let (s, _) = utils::extract_whitespace(s)?;
+        let (s, _) = utils::skip_whitespace(s);
 
         let (s, op) = Op::new(s)?;
-        let (s, _) = utils::extract_whitespace(s)?;
+        let (s, _) = utils::skip_whitespace(s);
 
         let (s, rhs) = Number::new(s)?;
 
@@ -74,12 +84,18 @@ impl Expr {
                 Val::Number(result)
             }
             Self::Number(Number(n)) => Val::Number(*n),
+            // Self::BindingUsage(BindingUsage(_)) => {},
+            // Self::Block(Block(_)) => {},
+            _ => todo!()
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::binding_def::BindingDef;
+    use crate::expr::binding_usage::BindingUsage;
+    use crate::stmt::Stmt;
     use super::*;
 
     #[test]
@@ -148,9 +164,9 @@ mod tests {
             Expr::Operation {
                 lhs: Number(1),
                 rhs: Number(2),
-                op: Op::Add
+                op: Op::Add,
             }
-            .eval(),
+                .eval(),
             Val::Number(3)
         )
     }
@@ -161,9 +177,9 @@ mod tests {
             Expr::Operation {
                 lhs: Number(1),
                 rhs: Number(2),
-                op: Op::Sub
+                op: Op::Sub,
             }
-            .eval(),
+                .eval(),
             Val::Number(-1)
         )
     }
@@ -174,9 +190,9 @@ mod tests {
             Expr::Operation {
                 lhs: Number(10),
                 rhs: Number(2),
-                op: Op::Mul
+                op: Op::Mul,
             }
-            .eval(),
+                .eval(),
             Val::Number(20)
         )
     }
@@ -187,15 +203,69 @@ mod tests {
             Expr::Operation {
                 lhs: Number(10),
                 rhs: Number(2),
-                op: Op::Div
+                op: Op::Div,
             }
-            .eval(),
+                .eval(),
             Val::Number(5)
         )
     }
 
     #[test]
     fn parse_binding_usage() {
-        
+        assert_eq!(
+            Expr::new("bar"),
+            Ok((
+                "",
+                Expr::BindingUsage(BindingUsage {
+                    name: "bar".to_string()
+                })
+            ))
+        )
+    }
+
+    #[test]
+    fn parse_block() {
+        assert_eq!(
+            Expr::new("{ 200 }"),
+            Ok((
+                "",
+                Expr::Block(Block {
+                    stmts: vec![Stmt::Expr(Expr::Number(Number(200)))]
+                })
+            ))
+        )
+    }
+
+    #[test]
+    fn parse_block_with_multiple_statements() {
+        assert_eq!(
+            Expr::new(
+                "{
+                    let a = 10
+                    let b = a
+                    b
+                }"
+            ),
+            Ok((
+                "",
+                Expr::Block(Block {
+                    stmts: vec![
+                        Stmt::BindingDef(BindingDef {
+                            name: "a".to_string(),
+                            val: Expr::Number(Number(10)),
+                        }),
+                        Stmt::BindingDef(BindingDef {
+                            name: "b".to_string(),
+                            val: Expr::BindingUsage(BindingUsage {
+                                name: "a".to_string(),
+                            }),
+                        }),
+                        Stmt::Expr(Expr::BindingUsage(BindingUsage {
+                            name: "b".to_string(),
+                        })),
+                    ]
+                })
+            ))
+        )
     }
 }
