@@ -1,5 +1,3 @@
-extern crate core;
-
 pub mod binding_def;
 mod env;
 pub mod expr;

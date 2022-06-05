@@ -26,18 +26,18 @@ impl Block {
         Ok((s, Self { stmts }))
     }
 
-    pub fn eval(&self, _: &Env) -> Result<Val, String> {
+    pub fn eval(&self, env: &Env) -> Result<Val, String> {
         if self.stmts.is_empty() {
             return Ok(Val::Unit);
         }
 
-        let mut env = Env::default();
+        let mut child_env = env.create_child();
         let stmts_except_last = &self.stmts[..self.stmts.len() - 1];
         for stmt in stmts_except_last {
-            stmt.eval(&mut env)?;
+            stmt.eval(&mut child_env)?;
         }
 
-        self.stmts.last().unwrap().eval(&mut env)
+        self.stmts.last().unwrap().eval(&mut child_env)
     }
 }
 
@@ -46,7 +46,7 @@ mod tests {
     use super::*;
     use crate::binding_def::BindingDef;
     use crate::expr::binding_usage::BindingUsage;
-    use crate::expr::Expr;
+    use crate::expr::{Expr, Op};
     use crate::expr::Number;
 
     #[test]
@@ -164,6 +164,47 @@ mod tests {
             }
             .eval(&mut Env::default()),
             Ok(Val::Unit)
+        )
+    }
+
+    #[test]
+    fn eval_block_with_multiple_exprs() {
+        assert_eq!(
+            Block {
+                stmts: vec![
+                    Stmt::Expr(Expr::Number(Number(100))),
+                    Stmt::Expr(Expr::Number(Number(30))),
+                    Stmt::Expr(Expr::Operation {
+                        lhs: Number(10),
+                        rhs: Number(20),
+                        op: Op::Mul
+                    }),
+                ]
+            }.eval(&mut Env::default()),
+            Ok(Val::Number(200))
+        )
+    }
+
+    #[test]
+    fn eval_block_using_binding_from_parent_env() {
+        let mut env = Env::default();
+        env.store_binding("foo".to_string(), Val::Number(2));
+
+        assert_eq!(
+            Block {
+                stmts: vec![
+                    Stmt::BindingDef(BindingDef{
+                        name: "baz".to_string(),
+                        val: Expr::BindingUsage(BindingUsage {
+                            name: "foo".to_string(),
+                        })
+                    }),
+                    Stmt::Expr(Expr::BindingUsage(BindingUsage {
+                        name: "baz".to_string()
+                    }))
+                ]
+            }.eval(&env),
+            Ok(Val::Number(2))
         )
     }
 }
