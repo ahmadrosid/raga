@@ -55,6 +55,23 @@ pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str,
     }
 }
 
+pub(crate) fn sequence<T>(
+    parser: impl Fn(&str) -> Result<(&str, T), String>,
+    mut s: &str,
+) -> Result<(&str, Vec<T>), String> {
+    let mut items = vec![];
+
+    while let Ok((new_s, item)) = parser(s) {
+        s = new_s;
+        items.push(item);
+
+        let (new_s, _) = skip_whitespace(s);
+        s = new_s;
+    }
+
+    Ok((s, items))
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

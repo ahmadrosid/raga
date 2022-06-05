@@ -1,9 +1,12 @@
+extern crate core;
+
 pub mod binding_def;
 mod env;
 pub mod expr;
 pub mod stmt;
 mod utils;
 pub mod val;
+mod func_def;
 
 pub use val::Val;
 pub use env::Env;

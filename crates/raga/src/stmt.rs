@@ -1,11 +1,13 @@
 use crate::binding_def::BindingDef;
+use crate::func_def::FuncDef;
 use crate::env::Env;
 use crate::expr::Expr;
 use crate::val::Val;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     BindingDef(BindingDef),
+    FuncDef(FuncDef),
     Expr(Expr),
 }
 
@@ -13,6 +15,7 @@ impl Stmt {
     pub fn new(s: &str) -> Result<(&str, Self), String> {
         BindingDef::new(s)
             .map(|(s, binding_def)| (s, Self::BindingDef(binding_def)))
+            .or_else(|_| FuncDef::new(s).map(|(s, func_def)| (s, Self::FuncDef(func_def))))
             .or_else(|_| Expr::new(s).map(|(s, expr)| (s, Self::Expr(expr))))
     }
 
@@ -22,6 +25,10 @@ impl Stmt {
                 binding_def.eval(env)?;
                 Ok(Val::Unit)
             }
+            Self::FuncDef(func_def) => {
+                func_def.eval(env)?;
+                Ok(Val::Unit)
+            },
             Self::Expr(expr) => expr.eval(env),
         }
     }
@@ -29,6 +36,7 @@ impl Stmt {
 
 #[cfg(test)]
 mod tests {
+    use crate::expr::binding_usage::BindingUsage;
     use super::*;
     use crate::expr::Number;
     use crate::expr::Op;
@@ -41,7 +49,24 @@ mod tests {
                 "",
                 Stmt::BindingDef(BindingDef {
                     name: "a".to_string(),
-                    val: Expr::Number(Number(10))
+                    val: Expr::Number(Number(10)),
+                })
+            ))
+        )
+    }
+
+    #[test]
+    fn parse_func_def() {
+        assert_eq!(
+            Stmt::new("fn me id => id"),
+            Ok((
+                "",
+                Stmt::FuncDef(FuncDef {
+                    name: "me".to_string(),
+                    params: vec!["id".to_string()],
+                    body: Box::new(Stmt::Expr(Expr::BindingUsage(BindingUsage {
+                        name: "id".to_string()
+                    }))),
                 })
             ))
         )
@@ -54,9 +79,9 @@ mod tests {
             Ok((
                 "",
                 Stmt::Expr(Expr::Operation {
-                    lhs: Number(1),
-                    rhs: Number(1),
-                    op: Op::Add
+                    lhs: Box::new(Expr::Number(Number(1))),
+                    rhs: Box::new(Expr::Number(Number(1))),
+                    op: Op::Add,
                 })
             ))
         )
@@ -67,9 +92,9 @@ mod tests {
         assert_eq!(
             Stmt::BindingDef(BindingDef {
                 name: "some_def".to_string(),
-                val: Expr::Number(Number(10))
+                val: Expr::Number(Number(10)),
             })
-            .eval(&mut Env::default()),
+                .eval(&mut Env::default()),
             Ok(Val::Unit)
         )
     }
